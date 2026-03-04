@@ -28,21 +28,35 @@ def retrieve(state: GraphState):
     return {"documents": docs, "question": question}
 
 def generate(state: GraphState):
-    print("--- STEP: GENERATING ANSWER ---")
+    print("--- STEP: GENERATING PROFESSIONAL ANSWER ---")
     question = state["question"]
     docs = state["documents"]
     
-    # Format context with citations
-    context = "\n\n".join([f"[Source {i+1}]: {d.page_content}" for i, d in enumerate(docs)])
+    # 1. Format context with rich metadata (Filename and Page)
+    context_list = []
+    for i, d in enumerate(docs):
+        # Extract just the filename from the full path
+        source_file = os.path.basename(d.metadata.get('source', 'Unknown'))
+        page_num = d.metadata.get('page', 'Unknown')
+        
+        content = f"CONTENT: {d.page_content}\nSOURCE: {source_file} (Page {page_num})\n"
+        context_list.append(content)
     
+    context = "\n\n".join(context_list)
+    
+    # 2. Update the prompt to demand specific citations
     prompt = f"""You are an expert medical assistant for Stroke RAG. 
     Answer the question using ONLY the context below. 
+    
+    CRITICAL INSTRUCTION: You must cite the specific document name and page number 
+    for every claim you make (e.g., "Treatment X is recommended [stroke_prevention_2024.pdf, Page 12]").
+    
     If the answer isn't in the context, say you don't know. 
     
     Question: {question}
     Context: {context}
     
-    Answer (with [Source X] citations):"""
+    Answer:"""
     
     response = model.invoke(prompt)
     return {"generation": response.content, "question": question}
