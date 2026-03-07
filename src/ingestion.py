@@ -13,11 +13,11 @@ def build_vector_db():
     docs = loader.load()
     
     # 2. Split text (Architectural choice: small chunks for precision)
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1500, chunk_overlap=100)
     chunks = text_splitter.split_documents(docs)
     
     # 3. Create Embeddings & Store in ChromaDB
-    print(f"Ingesting {len(chunks)} chunks into PulsePoint Vector Store...")
+    print(f"Ingesting {len(chunks)} chunks into Stroke-RAG Vector Store...")
     vector_db = Chroma.from_documents(
         documents=chunks,
         embedding=OpenAIEmbeddings(),
