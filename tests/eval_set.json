@@ -1,0 +1,52 @@
+[
+  {
+    "id": "01",
+    "question": "What is the Class 1 recommendation for blood pressure targets in 2024 stroke prevention?",
+    "ground_truth": "The 2024 guidelines recommend a target of <130/80 mm Hg for adults with hypertension to reduce stroke risk (Class 1)."
+  },
+  {
+    "id": "02",
+    "question": "Is aspirin recommended for primary prevention in adults over 70 without CVD?",
+    "ground_truth": "No. For adults >70 years, aspirin for primary prevention is Class 3 (Harm/No Benefit) due to increased bleeding risk."
+  },
+  {
+    "id": "03",
+    "question": "What are the 2021 recommendations for Chest Pain triage?",
+    "ground_truth": "Move away from \"atypical\" chest pain. InsteUse high-sensitivity cardiac troponins (hs-cTn) as the preferred standard for diagnosing myocardial infarction.ad, describe pain as cardiac, possibly cardiac, or noncardiac."
+  },
+  {
+    "id": "04",
+    "question": "Should GLP-1 RAs be used for patients with Type 2 Diabetes?",
+    "ground_truth": "GLP-1 RAs are highly recommended for adults with Type 2 Diabetes (T2D) and established cardiovascular disease (CVD) or high cardiovascular risk to effectively reduce the risk of stroke."
+  },
+  {
+    "id": "05",
+    "question": "Define the 'Life's Essential 8' metrics for stroke prevention.",
+    "ground_truth": "Diet, Physical Activity, Nicotine Exposure, Sleep Health, BMI (Body Mass Index), Blood Lipids, Blood Glucose, Blood Pressure"
+  },
+  {
+    "id": "06",
+    "question": "What is the Class 1 recommendation for physical activity?",
+    "ground_truth": "Adults should engage in at least 150 minutes/week of moderate-intensity aerobic activity or 75 minutes/week of vigorous-intensity aerobic activity."
+  },
+  {
+    "id": "07",
+    "question": "How does the 2023 Coronary Disease guide define 'Chronic'?",
+    "ground_truth": "CCD is defined as a heterogeneous group of conditions including obstructive and nonobstructive CAD, with or without previous myocardial infarction or revascularization."
+  },
+  {
+    "id": "08",
+    "question": "What is the role of Mediterranean diet in 2024 stroke prevention?",
+    "ground_truth": "It is specifically recommended for adults with no prior CVD but who have high or intermediate cardiovascular risk to reduce the incidence of a first stroke. It focuses on whole grains, fruits, vegetables, beans, and healthy fats (like olive oil)."
+  },
+  {
+    "id": "09",
+    "question": "Are SGLT2 inhibitors recommended for stroke prevention?",
+    "ground_truth": "the 2024 Primary Prevention of Stroke guideline notes that there is currently no specific guidance or evidence of a significant independent reduction in stroke risk for SGLT2 inhibitors in primary prevention."
+  },
+  {
+    "id": "10",
+    "question": "What is the recommendation for screening for social determinants?",
+    "ground_truth": "Periodic screening for Social Determinants of Health (e.g., economic stability, education access, food security, and racism/discrimination) is Class 1 (Beneficial)."
+  }
+]
