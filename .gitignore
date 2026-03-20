@@ -4,3 +4,4 @@ vector_db/
 __pycache__/
 .DS_Store
 *.pdf
+*.csv

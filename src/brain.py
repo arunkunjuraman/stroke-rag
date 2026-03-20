@@ -104,6 +104,7 @@ stroke_rag_app = workflow.compile()
 
 if __name__ == "__main__":
     #test_input = {"question": "What is the recommended treatment for high blood pressure in stroke prevention?"}
-    test_input = {"question": "What are the specific Class I recommendations for antiplatelet therapy in the 2021 guidelines?"}
+    #test_input = {"question": "What are the specific Class I recommendations for antiplatelet therapy in the 2021 guidelines?"}
+    test_input = {"question": "What is the Class 1 recommendation for BP targets?"}
     result = stroke_rag_app.invoke(test_input)
     print("\nFINAL ANSWER:\n", result["generation"])
