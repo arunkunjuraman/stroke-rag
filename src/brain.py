@@ -12,6 +12,8 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import yaml
+from src.cache import cache
+
 
 load_dotenv()
 
@@ -20,6 +22,8 @@ class GraphState(TypedDict):
     question: str
     documents: List[str]
     generation: str
+    is_cached: bool
+
 
 # 2. Setup the "Tools"
 embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
@@ -135,14 +139,53 @@ def load_prompt(version_file):
 
 current_prompt_template = load_prompt("v2_comparative.yaml")
 
+def check_cache(state: GraphState):
+    print("--- STEP: CHECKING CACHE ---")
+    question = state["question"]
+    cached_res = cache.get_response(question)
+    if cached_res:
+        return {
+            "generation": cached_res["generation"], 
+            "documents": cached_res["documents"], 
+            "is_cached": True
+        }
+    return {"is_cached": False}
+
+def save_cache(state: GraphState):
+    if not state.get("is_cached", False):
+        print("--- STEP: SAVING TO CACHE ---")
+        cache.set_response(state["question"], state)
+    return state
+
+
 # 4. Connect the Dots
 workflow = StateGraph(GraphState)
+workflow.add_node("check_cache", check_cache)
 workflow.add_node("retrieve", retrieve)
 workflow.add_node("generate", generate)
+workflow.add_node("save_cache", save_cache)
 
-workflow.set_entry_point("retrieve")
+workflow.set_entry_point("check_cache")
+
+def decide_to_retrieve(state: GraphState):
+    if state.get("is_cached", False):
+        return "end"
+    else:
+        return "retrieve"
+
+workflow.add_conditional_edges(
+    "check_cache",
+    decide_to_retrieve,
+    {
+        "end": END,
+        "retrieve": "retrieve"
+    }
+)
+
 workflow.add_edge("retrieve", "generate")
-workflow.add_edge("generate", END)
+workflow.add_edge("generate", "save_cache")
+workflow.add_edge("save_cache", END)
+
 
 stroke_rag_app = workflow.compile()
 
