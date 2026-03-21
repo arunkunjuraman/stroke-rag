@@ -5,10 +5,12 @@ from langchain_chroma import Chroma
 from langgraph.graph import StateGraph, END
 from dotenv import load_dotenv
 from langchain_community.retrievers import BM25Retriever
-from langchain_core.documents import Document
-from langchain_classic.retrievers import EnsembleRetriever
+from langchain_classic.retrievers import ParentDocumentRetriever, EnsembleRetriever, ContextualCompressionRetriever
+from langchain_classic.storage import LocalFileStore, create_kv_docstore
 from langchain_cohere import CohereRerank
-from langchain_classic.retrievers import ContextualCompressionRetriever
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 import yaml
 
 load_dotenv()
@@ -20,29 +22,47 @@ class GraphState(TypedDict):
     generation: str
 
 # 2. Setup the "Tools"
-# Make sure this path matches where your ingestion.py created the folder
-vector_db = Chroma(persist_directory="vector_db/", embedding_function=OpenAIEmbeddings())
-vector_retriever = vector_db.as_retriever(search_kwargs={"k": 20})
+embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
+vector_db = Chroma(
+    collection_name="stroke_rag_parents", 
+    persist_directory="vector_db_parent/", 
+    embedding_function=embeddings
+)
+
+# Parent Document Retrieval setup
+fs = LocalFileStore("./parent_store")
+store = create_kv_docstore(fs)
+parent_splitter = RecursiveCharacterTextSplitter(chunk_size=1500, chunk_overlap=200)
+child_splitter = RecursiveCharacterTextSplitter(chunk_size=400, chunk_overlap=50)
+
+parent_retriever = ParentDocumentRetriever(
+    vectorstore=vector_db,
+    docstore=store,
+    child_splitter=child_splitter,
+    parent_splitter=parent_splitter,
+    search_kwargs={"k": 40} # Increased from 20 to widen the candidate pool
+)
+
 model = ChatOpenAI(model="gpt-4o", temperature=0)
 
 # 3. Setup BM25 (Sparse) 
-# Architect Note: BM25 usually needs the doc list. In a production 
-# scale-up, you'd use a dedicated search engine like Elasticsearch.
-all_docs = vector_db.get() # Retrieve documents from your local Chroma store
-documents = [Document(page_content=text, metadata=meta) 
-             for text, meta in zip(all_docs['documents'], all_docs['metadatas'])]
+# To improve recall and consistency with our Parent retrieval, 
+# we also index the larger context (Parent) documents in our keyword search.
+parent_keys = list(fs.yield_keys())
+parent_docs = store.mget(parent_keys)
 
-keyword_retriever = BM25Retriever.from_documents(documents)
-keyword_retriever.k = 20
+keyword_retriever = BM25Retriever.from_documents(parent_docs)
+keyword_retriever.k = 40 # Increased to match vector retriever depth
 
 # 4. Create the Hybrid Ensemble
-# We weigh them 50/50. You can tune this (e.g., 0.7 for Semantic if it's too literal)
+# Combine the precision of Parent-Child vector search with Keyword search (Semantic + Keyword)
 hybrid_retriever = EnsembleRetriever(
-    retrievers=[vector_retriever, keyword_retriever],
-    weights=[0.5, 0.5]
+    retrievers=[parent_retriever, keyword_retriever],
+    weights=[0.7, 0.3] # Increased Vector weight to boost semantic accuracy
 )
 # 5. Define the Re-ranker (Precision)
 # This model evaluates the Query + Chunk pair specifically
+# Increasing top_n to 5 to provide more context to the LLM for complex comparative questions
 compressor = CohereRerank(model="rerank-english-v3.0", top_n=5)
 
 # 6. Create the "Smart" Retriever
@@ -50,14 +70,38 @@ smart_retriever = ContextualCompressionRetriever(
     base_compressor=compressor, 
     base_retriever=hybrid_retriever
 )
+# 7. Multi-Query Expansion for Recall
+query_expansion_prompt = ChatPromptTemplate.from_template(
+    "You are an AI specialized in clinical guidelines for stroke. "
+    "Given the question below, generate 3 distinct search variations to maximize retrieval recall:\n"
+    "1. A direct clinical version using medical terminology.\n"
+    "2. A keyword-dense version focusing on the year and specific guidelines (e.g., 2024, AHA/ASA).\n"
+    "3. A summary-level version to identify broader recommendation sections.\n\n"
+    "Original question: {question}\n"
+    "Output only the 3 variations, one per line."
+)
+search_generator = query_expansion_prompt | model | StrOutputParser()
+
 # 5. Define the Actions (Nodes)
 def retrieve(state: GraphState):
-    print("--- STEP: HYBRID RETRIEVING (DENSE + SPARSE) + COHERE RE-RANK ---")
+    print("--- STEP: MULTI-QUERY EXPANSION + HYBRID RETRIEVING + RE-RANK ---")
     question = state["question"]
-    #docs = hybrid_retriever.invoke(question)
-    docs = smart_retriever.invoke(question) 
-
-    return {"documents": docs, "question": question}
+    
+    # Expand query for better focus on specific guideline semantics
+    variations = search_generator.invoke({"question": question}).split("\n")
+    queries = [question] + [v.strip() for v in variations if v.strip()]
+    
+    all_docs = []
+    # Collect candidates from all variations (Ensemble handles duplicates via ranking logic usually, 
+    # but for simplicity we manually deduplicate if needed, though most retrievers handle it)
+    for q in queries[:3]: # Limit to original + top 2 variants for speed
+        docs = smart_retriever.invoke(q) 
+        all_docs.extend(docs)
+    
+    # Simple deduplication by content
+    unique_docs = {d.page_content: d for d in all_docs}.values()
+    
+    return {"documents": list(unique_docs), "question": question}
 
 def generate(state: GraphState):
     print("--- STEP: GENERATING PROFESSIONAL ANSWER ---")
