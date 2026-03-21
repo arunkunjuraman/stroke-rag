@@ -16,3 +16,5 @@ tqdm
 PyYAML
 redis
 redis-om
+streamlit
+
