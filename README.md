@@ -128,7 +128,7 @@ The assistant is grounded in the following clinical guidelines:
 - **2021 Chest Pain / Heart Attack Diagnosis**
   [Download PDF](https://www.ahajournals.org/doi/pdf/10.1161/CIR.0000000000001029)
 - **2023 AHA/ACC/ACCP/ASPC/NLA/PCNA Management of Chronic Coronary Disease**
-  [Access Article](https://www.ahajournals.org/doi/epub/10.1161/CIR.0000000000001168)
+  [Download PDF](https://www.ahajournals.org/doi/pdf/10.1161/CIR.0000000000001168)
 
 ## 📄 License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
