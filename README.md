@@ -2,7 +2,7 @@
 
 **Intelligent Retrieval-Augmented Guidance for Clinical Stroke Protocols.**
 
-Stroke-RAG is a premium clinical decision-support system designed to provide precise, evidence-based answers to complex stroke guideline queries. By leveraging advanced Retrieval-Augmented Generation (RAG) architectures, it ensures high faithfulness to medical literature while maintaining rapid response times through semantic caching.
+Stroke-RAG is a clinical decision-support system designed to provide precise, evidence-based answers to complex stroke guideline queries. By leveraging advanced Retrieval-Augmented Generation (RAG) architectures, it ensures high faithfulness to medical literature while maintaining rapid response times through semantic caching.
 
 ---
 
@@ -26,7 +26,7 @@ Stroke-RAG is a premium clinical decision-support system designed to provide pre
   - **Answer Relevancy**: Guarantee that responses directly address clinical needs.
 - **Stable Execution**: Serialized evaluation runs provide stability and reliability during performance benchmarking.
 
-### 🎨 Premium User Interface
+### 🎨 User Interface
 - **Clean Clinical Design**: A custom-styled Streamlit interface tailored for readability.
 - **Evidence Traceability**: Every answer includes "Supporting Evidence" expanders showing the exact **File** and **Page Number** from the source guidelines.
 
