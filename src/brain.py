@@ -12,7 +12,9 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import yaml
-from src.cache import cache
+from cache import cache
+from logger import logger
+
 
 
 load_dotenv()
@@ -157,6 +159,12 @@ def save_cache(state: GraphState):
         cache.set_response(state["question"], state)
     return state
 
+def log_results(state: GraphState):
+    print("--- STEP: LOGGING INTERACTION ---")
+    logger.log_interaction(state)
+    return state
+
+
 
 # 4. Connect the Dots
 workflow = StateGraph(GraphState)
@@ -164,12 +172,13 @@ workflow.add_node("check_cache", check_cache)
 workflow.add_node("retrieve", retrieve)
 workflow.add_node("generate", generate)
 workflow.add_node("save_cache", save_cache)
+workflow.add_node("log_results", log_results)
 
 workflow.set_entry_point("check_cache")
 
 def decide_to_retrieve(state: GraphState):
     if state.get("is_cached", False):
-        return "end"
+        return "log"
     else:
         return "retrieve"
 
@@ -177,14 +186,16 @@ workflow.add_conditional_edges(
     "check_cache",
     decide_to_retrieve,
     {
-        "end": END,
+        "log": "log_results",
         "retrieve": "retrieve"
     }
 )
 
 workflow.add_edge("retrieve", "generate")
 workflow.add_edge("generate", "save_cache")
-workflow.add_edge("save_cache", END)
+workflow.add_edge("save_cache", "log_results")
+workflow.add_edge("log_results", END)
+
 
 
 stroke_rag_app = workflow.compile()
